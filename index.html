@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPACE FIGHTER</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="gameWrapper">
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <!-- ── TOP HUD ─────────────────────────────────────────────────────────── -->
+  <div id="ui">
+    <!-- P1 -->
+    <div class="ui-block">
+      <span class="ui-label" style="color:#00ffcc88">P1 Score</span>
+      <span class="ui-value" id="p1Score" style="color:#00ffcc">0</span>
+      <div class="ui-label" style="color:#00ffcc88; margin-top:2px">Hull</div>
+      <div class="healthBar">
+        <div id="healthFill" style="width:100%; background:linear-gradient(90deg,#00ffcc,#00ff88)"></div>
+      </div>
+    </div>
+
+    <!-- Wave -->
+    <div class="ui-block" style="align-items:center">
+      <span class="ui-label">Wave</span>
+      <span class="ui-value" id="waveDisplay">1</span>
+      <span id="stageDisplay" style="font-family:'Orbitron',monospace; font-size:9px; letter-spacing:2px; color:#ffffff55; margin-top:2px;">STAGE 1</span>
+      <span id="diffBadge">MEDIUM</span>
+    </div>
+
+    <!-- P2 (hidden in single player) -->
+    <div class="ui-block" id="p2HUD" style="display:none; align-items:flex-end">
+      <span class="ui-label" style="color:#cc44ff88">P2 Score</span>
+      <span class="ui-value" id="p2Score" style="color:#cc44ff">0</span>
+      <div class="ui-label" style="color:#cc44ff88; margin-top:2px; text-align:right">Hull</div>
+      <div class="healthBar">
+        <div id="healthFill2" style="width:100%; background:linear-gradient(90deg,#cc44ff,#aa22ff)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage Clear overlay (shown briefly after boss dies) -->
+  <div id="stageClear">
+    <div id="stageClearNum">STAGE 1 CLEAR</div>
+    <div id="stageClearBonus">+500 BONUS</div>
+    <div id="stageClearHeal">❤ +30 HULL REPAIRED</div>
+    <div id="stageClearNext">ENTERING STAGE 2...</div>
+  </div>
+
+  <!-- Wave announcement -->
+  <div id="wave-announce"></div>
+
+  <!-- Boss HP bar (hidden until boss spawns) -->
+  <div id="bossBar" style="display:none">
+    <div id="bossLabel">
+      <span id="bossName">⚠ BOSS</span>
+      <span id="bossPhase">PHASE 1</span>
+    </div>
+    <div id="bossBarTrack">
+      <div id="bossFill"></div>
+    </div>
+  </div>
+
+  <!-- P1 Powerup HUD (bottom-left) -->
+  <div id="powerupHUD" class="pup-hud" style="left:16px; transform:none;">
+    <div class="pup-icon" id="pup-shield">
+      <span class="pup-label" style="color:#00eeff">🛡 SHIELD</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar-shield" style="background:#00eeff"></div></div>
+    </div>
+    <div class="pup-icon" id="pup-speed">
+      <span class="pup-label" style="color:#ffee00">⚡ SPEED</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar-speed" style="background:#ffee00"></div></div>
+    </div>
+    <div class="pup-icon" id="pup-rapid">
+      <span class="pup-label" style="color:#ff4400">🔥 RAPID</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar-rapid" style="background:#ff4400"></div></div>
+    </div>
+    <div class="pup-icon" id="pup-omni">
+      <span class="pup-label" style="color:#ff00ff">🌀 360°</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar-omni" style="background:#ff00ff"></div></div>
+    </div>
+  </div>
+
+  <!-- P2 Powerup HUD (bottom-right, hidden in single) -->
+  <div id="powerupHUD2" class="pup-hud" style="right:16px; left:auto; transform:none; display:none;">
+    <div class="pup-icon" id="pup2-shield">
+      <span class="pup-label" style="color:#00eeff">🛡 SHIELD</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar2-shield" style="background:#00eeff"></div></div>
+    </div>
+    <div class="pup-icon" id="pup2-speed">
+      <span class="pup-label" style="color:#ffee00">⚡ SPEED</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar2-speed" style="background:#ffee00"></div></div>
+    </div>
+    <div class="pup-icon" id="pup2-rapid">
+      <span class="pup-label" style="color:#ff4400">🔥 RAPID</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar2-rapid" style="background:#ff4400"></div></div>
+    </div>
+    <div class="pup-icon" id="pup2-omni">
+      <span class="pup-label" style="color:#ff00ff">🌀 360°</span>
+      <div class="pup-bar-wrap"><div class="pup-bar" id="bar2-omni" style="background:#ff00ff"></div></div>
+    </div>
+  </div>
+
+  <!-- Sound toggle button -->
+  <button id="soundBtn" onclick="toggleSound()" title="Toggle sound">🔊</button>
+
+  <!-- ── OVERLAY ──────────────────────────────────────────────────────────── -->
+  <div id="overlay">
+
+    <!-- START SCREEN -->
+    <div id="startScreen">
+      <h1>SPACE FIGHTER</h1>
+      <div class="subtitle">MULTI-AGENT COMBAT SYSTEM v2.0</div>
+
+      <!-- Difficulty selector -->
+      <div class="diff-row">
+        <span class="diff-title">SELECT DIFFICULTY</span>
+        <div class="diff-buttons">
+          <button id="diff-easy"   class="diffBtn easy-btn"   onclick="setDifficulty('easy')">
+            <span class="diff-icon">🟢</span>
+            <span class="diff-label">EASY</span>
+            <span class="diff-sub">Fewer enemies · Slow bullets · More powerups</span>
+          </button>
+          <button id="diff-medium" class="diffBtn medium-btn selected" onclick="setDifficulty('medium')">
+            <span class="diff-icon">🟡</span>
+            <span class="diff-label">MEDIUM</span>
+            <span class="diff-sub">Balanced · Standard speed</span>
+          </button>
+          <button id="diff-hard"   class="diffBtn hard-btn"   onclick="setDifficulty('hard')">
+            <span class="diff-icon">🔴</span>
+            <span class="diff-label">HARD</span>
+            <span class="diff-sub">Many enemies · Fast bullets · Rare powerups</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mode-buttons">
+        <button class="modeBtn single-btn" onclick="startSingle()">
+          <span class="mode-icon">🚀</span>
+          <span class="mode-title">SINGLE PLAYER</span>
+          <span class="mode-sub">WASD + SPACE</span>
+        </button>
+        <button class="modeBtn vs-btn" onclick="startVS()">
+          <span class="mode-icon">⚔</span>
+          <span class="mode-title">VS MODE</span>
+          <span class="mode-sub">P1: WASD  |  P2: IJKL / Gamepad</span>
+        </button>
+      </div>
+
+      <div class="controls-hint">
+        P1 — WASD / Arrows · Space to shoot<br>
+        P2 — IJKL · Shift to shoot · or Gamepad
+      </div>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameOverScreen" style="display:none; flex-direction:column; align-items:center;">
+      <div id="gameOverTitle">MISSION FAILED</div>
+      <div id="finalScore">SCORE: 0</div>
+      <div class="mode-buttons" style="margin-top:0">
+        <button class="modeBtn single-btn" onclick="startSingle()">
+          <span class="mode-title">SINGLE</span>
+        </button>
+        <button class="modeBtn vs-btn" onclick="startVS()">
+          <span class="mode-title">VS MODE</span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /overlay -->
+</div><!-- /gameWrapper -->
+
+<script src="game.js"></script>
+</body>
+</html>
